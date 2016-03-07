@@ -1,0 +1,26 @@
+#!/bin/bash
+# Copyright 2016 Fabrice Guerin <fabrice.guerin99@gmail.com>
+# 
+# This file is part of usb-secure.
+#
+#    usb-secure is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    usb-secure is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with usb-secure.  If not, see <http://www.gnu.org/licenses/>.
+
+var=`cat /.secure/.securekey 2>/dev/null`;
+if [ -z $var ]; then var="0";fi
+if [ $var != "securekey" ];
+then
+init 0;
+fi
+umount -l /.secure;
+cryptsetup luksClose /dev/mapper/securekey;

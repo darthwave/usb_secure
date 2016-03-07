@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#who | grep -m1 ^?*.*\( | awk '{print $1}' | sed 's/[(|)]//g'
+var=`who | awk '{print $1}' | sort -u`
+
+authorizedKey=`cat /etc/udev/rules.d/10-usbKey.rules | grep $2`;
+	
+
+if [ -z "$authorizedKey" ] 
+then
+	icon="dialog-warning";
+	phrase="le péripherique :\n $1 \n est interdit"
+else
+	icon="dialog-information"
+	phrase="le péripherique :\n $1 \n est authorisé"
+
+fi
+
+for element in $var
+	do
+		#echo $DISPLAY;
+		#display=`who | grep $element | grep \(:[0-9]\) | awk '{print $5}' | sed 's/[(|)]//g' | sort -u;`
+		
+	#	test=`echo $display | awk -F '.' '{print $1}'`;
+	#	echo $test
+	#	number=$(tr -d ':' <<< $test)
+	#	echo $number;
+		#export XAUTHORITY=/home/$element/.Xauthority
+		
+	#	export DISPLAY=":$number"
+		su $element /usr/bin/my_notify "usb-secure" "$phrase"  3000 "$icon";
+	
+	done
+
+echo $1 $2 `date` >> /var/log/log_usb;
