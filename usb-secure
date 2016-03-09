@@ -255,8 +255,8 @@ function removeSecureKey {
 mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
 rm /etc/udev/rules.d/10-removeKeys.rules 2>/dev/null;
 rm /etc/udev/rules.d/10-removeKeys.rules.tmp 2>/dev/null;
-motif=`cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp | awk -F ', ' '/NAME\+="securekey", RUN/{print $3}'`;
-test=`sed /*securekey*/d /etc/udev/rules.d/10-lockAllUsb.rules.tmp`
+
+test=`sed /securekey/d /etc/udev/rules.d/10-lockAllUsb.rules.tmp`
 echo "$test" > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
 mv /etc/fstab.before_securekey /etc/fstab 2>/dev/null ;
 mv /etc/crypttab.before_securekey /etc/crypttab 2>/dev/null;
