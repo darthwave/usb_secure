@@ -22,83 +22,75 @@
 # autoriseUsb fonction permettant d'autoriser une clef USB en fonction du fabricant et du numero de série
 
 function autoriseUsb {
-# assurance de l'existance du fichier necessaire
-	touch /etc/udev/rules.d/10-lockAllUsb.rules;
-	#touch /etc/udev/rules.d/10-usbKey.rules;
-# deplacement pour autoriser le montage de nouveau peripherique et travail sur fichier temporaire
-	mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp
-	#mv /etc/udev/rules.d/10-usbKey.rules /etc/udev/rules.d/10-usbKey.rules.tmp
-# redemarrage du service udev
-#kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTO}=\"0\", NAME+=\"securekey\"";
-kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", NAME+=\"securekey\"";
-	echo $kDisk > /etc/udev/rules.d/10-lockAllUsbtmp.rules;
-	service udev restart
-# analyse des peripherique existant
-	var1=`ls /dev | grep sd[a-z]$`;
-
-	echo "inserez un péripherique usb et appuyez sur entrée"
-	read;
-# analyse du nouveau peripherique
-	var2=`ls /dev | grep sd[a-z]$`;
-	periph=`echo ${var1[@]} ${var2[@]} | tr ' ' '\n' | sort | uniq -u`;
-	echo $periph;
-	if [ -z $periph ]
-	then
+    # assurance de l'existance du fichier necessaire
+    touch /etc/udev/rules.d/10-lockAllUsb.rules;
+    #touch /etc/udev/rules.d/10-usbKey.rules;
+    # deplacement pour autoriser le montage de nouveau peripherique et travail sur fichier temporaire
+    mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp
+    #mv /etc/udev/rules.d/10-usbKey.rules /etc/udev/rules.d/10-usbKey.rules.tmp
+    # redemarrage du service udev
+    kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTO}=\"0\", NAME+=\"securekey\"";
+    #kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", NAME+=\"securekey\"";
+    echo $kDisk > /etc/udev/rules.d/10-lockAllUsbtmp.rules;
+    service udev restart
+    # analyse des peripherique existant
+    var1=`ls /dev | grep sd[a-z]$`;
+    echo "inserez un péripherique usb et appuyez sur entrée"
+    read;
+    # analyse du nouveau peripherique
+    var2=`ls /dev | grep sd[a-z]$`;
+    periph=`echo ${var1[@]} ${var2[@]} | tr ' ' '\n' | sort | uniq -u`;
+    echo $periph;
+    if [ -z $periph ]
+    then
 	echo "périphérique incorrect ou inexistant";
-	exit 0;
-	fi
-# pour chaque nouveau peripherique creer la regle d'autorisation
-	for element1 in $periph
-	do
-  		echo "/dev/$element1";
-		udevadm info --query=property -p $(udevadm info -q path -n /dev/$element1)  > /tmp/udevadm.log.tmp;
-		idVendor=`awk -F '=' '/^ID_VENDOR_ID/ {print $2}' /tmp/udevadm.log.tmp`;
-		serial=`awk -F '=' '/^ID_SERIAL_SHORT/ {print $2}' /tmp/udevadm.log.tmp`;
-		#echo "ACTION==\"add\",KERNELS==\"[0-9]-[0-9]\", ATTRS{idVendor}==\"$idVendor\", ATTRS{serial}==\"$serial\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\"" >> /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-	
-#sed -i "1iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTO}=\"0\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-
-sed -i "1iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-
-
-done;
+	cleaner
+        exit 0;
+    fi
+    # pour chaque nouveau peripherique creer la regle d'autorisation
+    for element1 in $periph
+    do
+  	echo "/dev/$element1";
+	udevadm info --query=property -p $(udevadm info -q path -n /dev/$element1)  > /tmp/udevadm.log.tmp;
+	idVendor=`awk -F '=' '/^ID_VENDOR_ID/ {print $2}' /tmp/udevadm.log.tmp`;
+	serial=`awk -F '=' '/^ID_SERIAL_SHORT/ {print $2}' /tmp/udevadm.log.tmp`;
+	#echo "ACTION==\"add\",KERNELS==\"[0-9]-[0-9]\", ATTRS{idVendor}==\"$idVendor\", ATTRS{serial}==\"$serial\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\"" >> /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+	sed -i "1iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTO}=\"0\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+        #sed -i "1iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+    done;
 
 # replacement des fichier pour activer les regle 
 
-	mv /etc/udev/rules.d/10-lockAllUsb.rules.tmp /etc/udev/rules.d/10-lockAllUsb.rules
-	#mv /etc/udev/rules.d/10-usbKey.rules.tmp /etc/udev/rules.d/10-usbKey.rules
-	rm /etc/udev/rules.d/10-lockAllUsbtmp.rules;
-	echo "péripherique autorisé, souhaitez vous autoriser un autre périphérique O/n";
-	read sup;
-	sup=${sup:-O}
+    mv /etc/udev/rules.d/10-lockAllUsb.rules.tmp /etc/udev/rules.d/10-lockAllUsb.rules
+    #mv /etc/udev/rules.d/10-usbKey.rules.tmp /etc/udev/rules.d/10-usbKey.rules
+    rm /etc/udev/rules.d/10-lockAllUsbtmp.rules;
+    echo "péripherique autorisé, souhaitez vous autoriser un autre périphérique O/n";
+    read sup;
+    sup=${sup:-O}
 # relancement si besoin
-	if [ $sup = "O" ]
-	then
-		autoriseUsb;
-	else
-		return 0;
-	fi
+    if [ $sup = "O" ]
+    then
+	autoriseUsb;
+    else
+        return 0;
+    fi
 };
 
 
 function permissionBasic {
-	echo "mise en place des regles de sécurité USB de base";
-	var1=`ls /dev | grep sd[a-z]$`;
-	for element1 in $var1
-	do
-		echo "$element1";
-		udevadm info --query=property -p $(udevadm info -q path -n /dev/$element1)  > /tmp/udevadm.log.tmp;
-		idVendor=`awk -F '=' '/^ID_VENDOR_ID/ {print $2}' /tmp/udevadm.log.tmp`;
-		serial=`awk -F '=' '/^ID_SERIAL_SHORT/ {print $2}' /tmp/udevadm.log.tmp`;
-		echo $idVendor;
-		echo $serial;
-		#authDisk="ACTION==\"add\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\"";
-		#echo $authDisk >> /etc/udev/rules.d/10-usbKey.rules.tmp;		
+    echo "mise en place des regles de sécurité USB de base";
+    var1=`ls /dev | grep sd[a-z]$`;
+    for element1 in $var1
+    do
+        echo "$element1";
+	udevadm info --query=property -p $(udevadm info -q path -n /dev/$element1)  > /tmp/udevadm.log.tmp;
+	idVendor=`awk -F '=' '/^ID_VENDOR_ID/ {print $2}' /tmp/udevadm.log.tmp`;
+	serial=`awk -F '=' '/^ID_SERIAL_SHORT/ {print $2}' /tmp/udevadm.log.tmp`;
+	echo $idVendor;
+	echo $serial;
 	echo "#" >>  /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-sed -i "1iACTION==\"add\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-
-
-done;
+        sed -i "1iACTION==\"add\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+    done;
 };
 
 function createSecureKey {
@@ -107,12 +99,11 @@ function createSecureKey {
 	echo "toutes les données seront effacée";
 	touch /etc/udev/rules.d/10-lockAllUsb.rules;
 	mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-#	kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTO}=\"0\", NAME+=\"securekey\"";
-	kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", NAME+=\"securekey\"";
+	kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTO}=\"0\", NAME+=\"securekey\"";
+#	kDisk="ACTION==\"add\",KERNEL==\"sd[b-z][0-9]\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", NAME+=\"securekey\"";
 	echo $kDisk > /etc/udev/rules.d/10-lockAllUsbtmp.rules;
 	sudo service udev restart;
 	var1=`ls /dev | grep sd[a-z]$`;
-	
 	echo "inserez un péripherique usb et appuyez sur entrée";
 	read;
 	var2=`ls /dev | grep sd[a-z]$`;
@@ -129,20 +120,10 @@ function createSecureKey {
 	echo $idVendor;
 	echo $serial;
 	#authDisk="ACTION==\"add\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTOMOUNT_HINT}=\"0\", ENV{UDISKS_PRESENTATION_HIDE}=\"1\", ENV{UDISKS_PRESENTATION_NOPOLICY}=\"1\", NAME+=\"securekey\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\"";
-
-	#authDisk2="ACTION==\"add\",KERNELS==\"[0-9]-[0-9]\", ATTRS{idVendor}!=\"$idVendor\", ATTRS{serial}!=\"$serial\", RUN+=\"/bin/sh -c 'echo 0 >/sys%p/authorized'\"";
 	authDisk3="ACTION==\"remove\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", RUN+=\"/bin/bash -c 'init 0'\"";
-	#echo $authDisk > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-	#echo $authDisk2 >> /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
 	echo $authDisk3 >> /etc/udev/rules.d/10-removeKeys.rules.tmp;
-
-
-#sed -i "1iACTION==\"add|change\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTO}=\"0\", ENV{UDISKS_PRESENTATION_HIDE}=\"1\", ENV{UDISKS_PRESENTATION_NOPOLICY}=\"1\", NAME+=\"securekey\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-
-sed -i "1iACTION==\"add|change\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", ENV{UDISKS_PRESENTATION_HIDE}=\"1\", ENV{UDISKS_PRESENTATION_NOPOLICY}=\"1\", NAME+=\"securekey\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-
-
-	#rm /etc/udev/rules.d/10-lockAllUsb.rules;
+        sed -i "1iACTION==\"add|change\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTO}=\"0\", ENV{UDISKS_PRESENTATION_HIDE}=\"1\", ENV{UDISKS_PRESENTATION_NOPOLICY}=\"1\", NAME+=\"securekey\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+        #sed -i "1iACTION==\"add|change\",KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"$idVendor\", ATTR{serial}==\"$serial\", ENV{UDISKS_AUTOMOUNT_HINT}=\"never\", ENV{UDISKS_PRESENTATION_HIDE}=\"1\", ENV{UDISKS_PRESENTATION_NOPOLICY}=\"1\", NAME+=\"securekey\", RUN+=\"/bin/sh -c 'echo 1 >/sys%p/authorized'\", GOTO=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
 	service udev restart 2>&1>/dev/null;
 	mkdir /.secure 2>/dev/null;
 	cryptsetup --verify-passphrase --verbose luksFormat /dev/securekey;
@@ -183,103 +164,95 @@ function delete_all_rules {
 
 function interdiction_mtp {
 
-#### interdiction des peripheriques MTP et PTP
-echo "#" > /etc/udev/rules.d/10-lockMtp.rules.tmp;
-sed -i "1i#### interdiction des peripheriques MTP et PTP" /etc/udev/rules.d/10-lockMtp.rules.tmp
-sed -i "2iACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"cdc_acm\", ATTR{interface}==\"MTP\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../remove\'\"" /etc/udev/rules.d/10-lockMtp.rules.tmp;
-sed -i "3i######ligne commentée pour mise à jour eventuelle###" /etc/udev/rules.d/10-lockMtp.rules.tmp;
-sed -i "4i##ACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../remove\'\"" /etc/udev/rules.d/10-lockMtp.rules.tmp;
-sed -i "5i##ACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"usbfs\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../remove\'\"" /etc/udev/rules.d/10-lockMtp.rules.tmp;
+        #### interdiction des peripheriques MTP et PTP
+        echo "#" > /etc/udev/rules.d/10-lockMtp.rules.tmp;
+        sed -i "1i#### interdiction des peripheriques MTP et PTP" /etc/udev/rules.d/10-lockMtp.rules.tmp
+        sed -i "2iACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"cdc_acm\", ATTR{interface}==\"MTP\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../remove\'\"" /etc/udev/rules.d/10-lockMtp.rules.tmp;
+        sed -i "3i######ligne commentée pour mise à jour eventuelle###" /etc/udev/rules.d/10-lockMtp.rules.tmp;
+        sed -i "4i##ACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../remove\'\"" /etc/udev/rules.d/10-lockMtp.rules.tmp;
+        sed -i "5i##ACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"usbfs\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../remove\'\"" /etc/udev/rules.d/10-lockMtp.rules.tmp;
 
 }
 
 function interdiction_sd {
-echo "#" > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-#### interdiction des peripheriques de stockage
-sed -i "1i#### interdiction des peripheriques de stockage" /etc/udev/rules.d/10-lockAllUsb.rules.tmp
-sed -i "2iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"*\", ATTR{serial}==\"*\", SUBSYSTEMS==\"usb\", DRIVERS==\"usb\", RUN+=\"/bin/sh -c \'echo 0 >/sys%p/authorized\'\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp
-sed -i "3iLABEL=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp
+        echo "#" > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+        #### interdiction des peripheriques de stockage
+        sed -i "1i#### interdiction des peripheriques de stockage" /etc/udev/rules.d/10-lockAllUsb.rules.tmp
+        sed -i "2iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"*\", ATTR{serial}==\"*\", SUBSYSTEMS==\"usb\", DRIVERS==\"usb\", RUN+=\"/bin/sh -c \'echo 0 >/sys%p/authorized\'\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp
+        sed -i "3iLABEL=\"usb-secure_end\"" /etc/udev/rules.d/10-lockAllUsb.rules.tmp
 }
 
 
 function autoriseHid {
-echo "#" > /etc/udev/rules.d/10-usbHid.rules.tmp;
-##### authorisation des péripherique type hid
-sed -i "1i#### authorisation des péripherique type hid et lecteur de carte" /etc/udev/rules.d/10-usbHid.rules.tmp;
-sed -i "2iACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"usbhid\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../authorized\'\"" /etc/udev/rules.d/10-usbHid.rules.tmp;
-sed -i "3iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{serial}==\"XISER0000\", ATTR{manufacturer}==\"XIRING\", ATTR{idProduct}==\"0011\", ATTR{product}==\"XI-SIGN USB V2\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/authorized\'\"" /etc/udev/rules.d/10-usbHid.rules.tmp
+        echo "#" > /etc/udev/rules.d/10-usbHid.rules.tmp;
+        ##### authorisation des péripherique type hid
+        sed -i "1i#### authorisation des péripherique type hid et lecteur de carte" /etc/udev/rules.d/10-usbHid.rules.tmp;
+        sed -i "2iACTION==\"add\", KERNEL==\"[0-9]-[0-9]:[0-9].[0-9]\", SUBSYSTEMS==\"usb\", DRIVERS==\"usbhid\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/../authorized\'\"" /etc/udev/rules.d/10-usbHid.rules.tmp;
+        sed -i "3iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{serial}==\"XISER0000\", ATTR{manufacturer}==\"XIRING\", ATTR{idProduct}==\"0011\", ATTR{product}==\"XI-SIGN USB V2\", RUN+=\"/bin/sh -c \'echo 1 >/sys%p/authorized\'\"" /etc/udev/rules.d/10-usbHid.rules.tmp
 
 }
 
 
 function log_usb {
-#apt-get install notify-osd 2>&1>/dev/null;
-#apt-get install libnotify-bin 2>&1>/dev/null; 
-
-echo "#" > /etc/udev/rules.d/10-lockUsb.rules.tmp;
-##### mise en place du log
-sed -i "1iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"*\", ATTR{serial}==\"*\", SUBSYSTEMS==\"usb\", DRIVERS==\"usb\", RUN+=\"/usr/bin/notify_usb %E{ID_SERIAL} %E{ID_SERIAL_SHORT}\"" /etc/udev/rules.d/10-lockUsb.rules.tmp;
-
+        apt-get install notify-osd 2>&1>/dev/null;
+        apt-get install libnotify-bin 2>&1>/dev/null; 
+        echo "#" > /etc/udev/rules.d/10-lockUsb.rules.tmp;
+        ##### mise en place du log
+        sed -i "1iACTION==\"add\", KERNEL==\"[0-9]-[0-9]\", ATTR{idVendor}==\"*\", ATTR{serial}==\"*\", SUBSYSTEMS==\"usb\", DRIVERS==\"usb\", RUN+=\"/usr/bin/notify_usb %E{ID_SERIAL} %E{ID_SERIAL_SHORT}\"" /etc/udev/rules.d/10-lockUsb.rules.tmp;
 }
 
 function disableUsbKey {
-#mv /etc/udev/rules.d/10-usbKey.rules /etc/udev/rules.d/10-usbKey.rules.tmp;
-#cat /etc/udev/rules.d/10-usbKey.rules.tmp;
+        mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+        motif=`cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp | awk -F ', ' '/^ACTION.*ATTR{serial}=="[^*].*\", ENV{UDISKS_AUTO}="0", RUN/{print $3}'`;
+        #motif=`cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp | awk -F ', ' '/^ACTION.*ATTR{serial}=="[^*].*\", ENV{UDISKS_AUTOMOUNT_HINT}="never", RUN/{print $3}'`;
+        echo $motif;
+        i=0;
+        declare -A tab_asso
+        for element1 in $motif
+                do
+                i=`expr $i + 1`
+                echo  "$i) $element1";
+                tab_asso["$i"]="$element1";
+                #echo $mavar;
+                done;
 
-mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-#cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-
-
-#motif=`cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp | awk -F ', ' '/^ACTION.*ATTR{serial}=="[^*].*\", ENV{UDISKS_AUTO}="0", RUN/{print $3}'`;
-motif=`cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp | awk -F ', ' '/^ACTION.*ATTR{serial}=="[^*].*\", ENV{UDISKS_AUTOMOUNT_HINT}="never", RUN/{print $3}'`;
-echo $motif;
-i=0;
-declare -A tab_asso
-for element1 in $motif
-	do
-	i=`expr $i + 1`
-	echo  "$i) $element1";
-	tab_asso["$i"]="$element1";
-	#echo $mavar;
-	done;
-
-echo "choisir le numero de la cle a interdire :"
-read choiceUsb;
-echo ${tab_asso["$choiceUsb"]};
-test=`sed /${tab_asso["$choiceUsb"]}/d /etc/udev/rules.d/10-lockAllUsb.rules.tmp`
-echo "$test" > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+        echo "choisir le numero de la cle a interdire :"
+        read choiceUsb;
+        echo ${tab_asso["$choiceUsb"]};
+        test=`sed /${tab_asso["$choiceUsb"]}/d /etc/udev/rules.d/10-lockAllUsb.rules.tmp`
+        echo "$test" > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
 }
 
 function interdiction_principale {
-interdiction_mtp;
-interdiction_sd;
-autoriseHid;
-log_usb
+        interdiction_mtp;
+        interdiction_sd;
+        autoriseHid;
+        log_usb
 
 }
 
 function removeSecureKey {
-mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-rm /etc/udev/rules.d/10-removeKeys.rules 2>/dev/null;
-rm /etc/udev/rules.d/10-removeKeys.rules.tmp 2>/dev/null;
-motif=`cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp | awk -F ', ' '/NAME\+="securekey", RUN/{print $3}'`;
-test=`sed /*securekey*/d /etc/udev/rules.d/10-lockAllUsb.rules.tmp`
-echo "$test" > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
-mv /etc/fstab.before_securekey /etc/fstab 2>/dev/null ;
-mv /etc/crypttab.before_securekey /etc/crypttab 2>/dev/null;
-update-rc.d -f securekey remove 2>&1>/dev/null
-rm /etc/init.d/securekey 2>/dev/null;
+        mv /etc/udev/rules.d/10-lockAllUsb.rules /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+        rm /etc/udev/rules.d/10-removeKeys.rules 2>/dev/null;
+        rm /etc/udev/rules.d/10-removeKeys.rules.tmp 2>/dev/null;
+        motif=`cat /etc/udev/rules.d/10-lockAllUsb.rules.tmp | awk -F ', ' '/NAME\+="securekey", RUN/{print $3}'`;
+        test=`sed /*securekey*/d /etc/udev/rules.d/10-lockAllUsb.rules.tmp`
+        echo "$test" > /etc/udev/rules.d/10-lockAllUsb.rules.tmp;
+        mv /etc/fstab.before_securekey /etc/fstab 2>/dev/null ;
+        mv /etc/crypttab.before_securekey /etc/crypttab 2>/dev/null;
+        update-rc.d -f securekey remove 2>&1>/dev/null
+        rm /etc/init.d/securekey 2>/dev/null;
 }
 
 function cleaner {
-rm /tmp/udevadm.log.tmp 2>/dev/null;
-rm /etc/udev/rules.d/10-lockAllUsbtmp.rules 2>/dev/null;
-mv /etc/udev/rules.d/10-lockUsb.rules.tmp /etc/udev/rules.d/10-lockUsb.rules 2>/dev/null;
-mv /etc/udev/rules.d/10-lockAllUsb.rules.tmp /etc/udev/rules.d/10-lockAllUsb.rules 2>/dev/null;
-mv /etc/udev/rules.d/10-lockMtp.rules.tmp /etc/udev/rules.d/10-lockMtp.rules 2>/dev/null;
-mv /etc/udev/rules.d/10-removeKeys.rules.tmp /etc/udev/rules.d/10-removeKeys.rules 2>/dev/null;
-mv /etc/udev/rules.d/10-usbHid.rules.tmp /etc/udev/rules.d/10-usbHid.rules 2>/dev/null;
-cryptsetup luksClose /dev/mapper/securekey 2>/dev/null;
+        rm /tmp/udevadm.log.tmp 2>/dev/null;
+        rm /etc/udev/rules.d/10-lockAllUsbtmp.rules 2>/dev/null;
+        mv /etc/udev/rules.d/10-lockUsb.rules.tmp /etc/udev/rules.d/10-lockUsb.rules 2>/dev/null;
+        mv /etc/udev/rules.d/10-lockAllUsb.rules.tmp /etc/udev/rules.d/10-lockAllUsb.rules 2>/dev/null;
+        mv /etc/udev/rules.d/10-lockMtp.rules.tmp /etc/udev/rules.d/10-lockMtp.rules 2>/dev/null;
+        mv /etc/udev/rules.d/10-removeKeys.rules.tmp /etc/udev/rules.d/10-removeKeys.rules 2>/dev/null;
+        mv /etc/udev/rules.d/10-usbHid.rules.tmp /etc/udev/rules.d/10-usbHid.rules 2>/dev/null;
+        cryptsetup luksClose /dev/mapper/securekey 2>/dev/null;
 }
 
 usage=/usr/share/doc/usb-secure/help;
@@ -301,77 +274,74 @@ TEMP=`getopt -o "DbaimsucrRhV" --longoptions delete-all,base,autorise,interdicti
 	then
 		eval set -- "$TEMP"
 	while true ; do
-          case $1 in
+            case $1 in
                 -D|--delete-all)
-						choice="suppression des regles et de la clef de sécurité effecutée";
-						echo "suppresion des regles et de la clef de sécurité";
-                        delete_all_rules;
-                        break;
-                        ;;
-                  
+                    choice="suppression des regles et de la clef de sécurité effecutée";
+                    echo "suppresion des regles et de la clef de sécurité";
+                    delete_all_rules;
+                    break;
+                    ;;                  
                 -b|--base)
-					choice="permissions de base mise en place"
-						permissionBasic;
-                        break;
-                        ;;
+                    choice="permissions de base mise en place"
+                    permissionBasic;
+                    break;
+                    ;;
                 -a|--autorise)
-                  choice="autorisations des peripheriques terminées"
-                        autoriseUsb; 
-                        break;
-                        ;;
+                    choice="autorisations des peripheriques terminées"
+                    autoriseUsb; 
+                    break;
+                    ;;
                 -i|--interdiction)
-                  choice="interdictions principales effectuées" 
-						interdiction_principale;
-						break;
-						;;
-				-m|--lockmtp)
-						choice="blockages mtp et ptp effectués" 
-					
-						interdiction_mtp;
-						break;
-						;;
-				-s|--locksd)
-						choice="blockages peripherisque de stockage effectués" 
-						interdiction_sd;
-						break;
-						;;
-				-u|--unlockhid)
-						choice="deblockages peripherisque hid effectués" 
-						autoriseHid;
-						break;
-						;;
-				-c|--create-secure-key)
-						choice="creation d'une cle de securité" 
-						createSecureKey;
-						break;
-						;;
-				-R|--remove-secure-key)
-						choice="suppression de la cle de securité" 
-						removeSecureKey;
-						break;
-						;;
-				-r|--remove-usb-key)
-
-				choice="clefs USB interdites";
-						disableUsbKey;
-						break;
-						;;
-				-h|--help)
-						${usage};
-						exit 0;
-						break;
-						;;
-				-V|--version)
-						echo "0:2:beta";
-						exit 0;
-						break;
-						;;
-					*)
-						${usage};
-						exit 0;
-						break;
-						;;
-		         esac
+                    choice="interdictions principales effectuées" 
+                    interdiction_principale;
+                    break;
+                    ;;
+		-m|--lockmtp)
+                    choice="blockages mtp et ptp effectués" 
+                    interdiction_mtp;
+                    break;
+                    ;;
+		-s|--locksd)
+                    choice="blockages peripherisque de stockage effectués" 
+                    interdiction_sd;
+                    break;
+                    ;;
+		-u|--unlockhid)
+                    choice="deblockages peripherisque hid effectués" 
+                    autoriseHid;
+                    break;
+                    ;;
+		-c|--create-secure-key)
+                    choice="creation d'une cle de securité" 
+                    createSecureKey;
+                    break;
+                    ;;
+		-R|--remove-secure-key)
+                    choice="suppression de la cle de securité" 
+                    removeSecureKey;
+                    break;
+                    ;;
+		-r|--remove-usb-key)
+                    choice="clefs USB interdites";
+                    disableUsbKey;
+                    break;
+                    ;;
+                -h|--help)
+                    ${usage};
+                    exit 0;
+                    break;
+                    ;;
+		-V|--version)
+                    echo "0:2:beta";
+                    exit 0;
+                    break;
+                    ;;
+		*)
+                    ${usage};
+                    exit 0;
+                    break;
+                    ;;
+            esac
   done
   
   echo $choice;
